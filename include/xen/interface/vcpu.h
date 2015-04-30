@@ -172,4 +172,11 @@ DEFINE_GUEST_HANDLE_STRUCT(vcpu_register_vcpu_info);
 
 /* Send an NMI to the specified VCPU. @extra_arg == NULL. */
 #define VCPUOP_send_nmi             11
+
+#define VCPUOP_get_vcpunum_info     14
+struct vcpu_vcpunum_info {
+        uint64_t num_of_vcpus;
+};
+DEFINE_GUEST_HANDLE_STRUCT(vcpu_vcpunum_info);
+
 #endif /* __XEN_PUBLIC_VCPU_H__ */

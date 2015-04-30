@@ -61,6 +61,9 @@
 #include <asm/io.h>
 #include <asm/unistd.h>
 
+#include <xen/interface/vcpu.h>
+#include <asm/xen/hypercall.h>
+
 #ifndef SET_UNALIGN_CTL
 # define SET_UNALIGN_CTL(a,b)	(-EINVAL)
 #endif
@@ -799,7 +802,14 @@ change_okay:
 
 SYSCALL_DEFINE0(getvcpunum)
 {
-        return num_online_cpus();
+        struct vcpu_vcpunum_info vcpunum_info;
+        int cpu = smp_processor_id();
+
+        if ( HYPERVISOR_vcpu_op(VCPUOP_get_vcpunum_info, cpu, &vcpunum_info) )
+                BUG();
+
+        // return num_online_cpus();
+        return vcpunum_info.num_of_vcpus;
 }
 
 /**
