@@ -797,6 +797,11 @@ change_okay:
 	return old_fsgid;
 }
 
+SYSCALL_DEFINE0(getvcpunum)
+{
+        return num_online_cpus();
+}
+
 /**
  * sys_getpid - return the thread group id of the current process
  *
