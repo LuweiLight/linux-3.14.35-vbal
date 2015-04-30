@@ -794,7 +794,7 @@ void deactivate_task(struct rq *rq, struct task_struct *p, int flags)
 
 static void update_rq_clock_task(struct rq *rq, s64 delta)
 {
-	s64 steal_time, steal_delta;
+    s64 steal_time, steal_delta;
     s64 irq_time, irq_delta;
 
     irq_time = irq_time_read(cpu_of(rq));
