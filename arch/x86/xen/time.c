@@ -112,6 +112,22 @@ void xen_setup_runstate_info(int cpu)
 		BUG();
 }
 
+static u64 xen_steal_clock(int cpu)
+{
+	struct vcpu_runstate_info state;
+	s64 stolen;
+
+	get_runstate_snapshot(&state);
+	WARN_ON(state.state != RUNSTATE_running);
+
+	stolen = state.time[RUNSTATE_runnable] + state.time[RUNSTATE_offline];
+
+	if (stolen < 0)
+		stolen = 0;
+
+	return (u64)stolen; 
+}
+
 static void do_stolen_accounting(void)
 {
 	struct vcpu_runstate_info state;
@@ -480,6 +496,7 @@ void xen_timer_resume(void)
 
 static const struct pv_time_ops xen_time_ops __initconst = {
 	.sched_clock = xen_clocksource_read,
+	.steal_clock = xen_steal_clock,
 };
 
 static void __init xen_time_init(void)
