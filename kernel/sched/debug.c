@@ -297,6 +297,8 @@ do {									\
 	P(nr_running);
 	SEQ_printf(m, "  .%-30s: %lu\n", "load",
 		   rq->load.weight);
+        SEQ_printf(m, "  .%-30s: %lu\n", "cpu_power",
+                   rq->cpu_power);
 	P(nr_switches);
 	P(nr_load_updates);
 	P(nr_uninterruptible);
