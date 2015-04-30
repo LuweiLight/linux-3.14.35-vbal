@@ -6,6 +6,11 @@
 #include <linux/context_tracking.h>
 #include "sched.h"
 
+#ifdef CONFIG_PARAVIRT
+#include <asm/paravirt.h>
+#endif
+
+
 
 #ifdef CONFIG_IRQ_TIME_ACCOUNTING
 
@@ -23,6 +28,8 @@
 DEFINE_PER_CPU(u64, cpu_hardirq_time);
 DEFINE_PER_CPU(u64, cpu_softirq_time);
 
+static DEFINE_PER_CPU(ktime_t, prev_process_tick_clock);
+static DEFINE_PER_CPU(u64, prev_steal_time);
 static DEFINE_PER_CPU(u64, irq_start_time);
 static int sched_clock_irqtime;
 
@@ -48,6 +55,7 @@ void irqtime_account_irq(struct task_struct *curr)
 {
 	unsigned long flags;
 	s64 delta;
+	u64 *prev_steal, cur_steal, steal_delta;
 	int cpu;
 
 	if (!sched_clock_irqtime)
@@ -56,7 +64,8 @@ void irqtime_account_irq(struct task_struct *curr)
 	local_irq_save(flags);
 
 	cpu = smp_processor_id();
-	delta = sched_clock_cpu(cpu) - __this_cpu_read(irq_start_time);
+	// delta = sched_clock_cpu(cpu) - __this_cpu_read(irq_start_time);
+	delta = ktime_to_ns(ktime_get()) - __this_cpu_read(irq_start_time);
 	__this_cpu_add(irq_start_time, delta);
 
 	irq_time_write_begin();
@@ -66,6 +75,23 @@ void irqtime_account_irq(struct task_struct *curr)
 	 * in that case, so as not to confuse scheduler with a special task
 	 * that do not consume any time, but still wants to run.
 	 */
+
+	prev_steal = &__get_cpu_var(prev_steal_time);
+	cur_steal = paravirt_steal_clock(cpu);
+
+	// irq_exit
+	if ( hardirq_count() || in_serving_softirq() ) {
+        	steal_delta = cur_steal - *prev_steal;
+		if (steal_delta > delta)
+			delta = steal_delta;
+		delta -= steal_delta;
+
+		// still abnormal? should be very rarely..
+		if (delta > 1000000)
+			delta = 10000; // just give it 10us here.
+	}
+	*prev_steal = cur_steal;
+
 	if (hardirq_count())
 		__this_cpu_add(cpu_hardirq_time, delta);
 	else if (in_serving_softirq() && curr != this_cpu_ksoftirqd())
@@ -136,7 +162,7 @@ void account_user_time(struct task_struct *p, cputime_t cputime,
 		       cputime_t cputime_scaled)
 {
 	int index;
-
+	
 	/* Add user time to process. */
 	p->utime += cputime;
 	p->utimescaled += cputime_scaled;
@@ -453,6 +479,16 @@ void account_process_tick(struct task_struct *p, int user_tick)
 {
 	cputime_t one_jiffy_scaled = cputime_to_scaled(cputime_one_jiffy);
 	struct rq *rq = this_rq();
+	ktime_t *prev_clock, cur_clock, clock_interval;
+
+	prev_clock = &__get_cpu_var(prev_process_tick_clock);
+	cur_clock = ktime_get();
+	clock_interval = ktime_sub(cur_clock, *prev_clock);
+	*prev_clock = cur_clock;
+
+	// assume 1000 HZ here:) cputime_one_jiffy
+	if ( ktime_to_us(clock_interval) < 900 )
+		return;
 
 	if (vtime_accounting_enabled())
 		return;
