@@ -6368,6 +6368,9 @@ void idle_balance(int this_cpu, struct rq *this_rq)
 
 	this_rq->idle_stamp = rq_clock(this_rq);
 
+        if (cpu_freeze(this_cpu))
+                return;
+
 	if (this_rq->avg_idle < sysctl_sched_migration_cost)
 		return;
 
