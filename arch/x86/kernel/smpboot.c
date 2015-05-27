@@ -256,6 +256,7 @@ static void notrace start_secondary(void *unused)
 	 */
 	lock_vector_lock();
 	set_cpu_online(smp_processor_id(), true);
+        set_cpu_freeze(smp_processor_id(), false);
 	unlock_vector_lock();
 	per_cpu(cpu_state, smp_processor_id()) = CPU_ONLINE;
 	x86_platform.nmi_init();

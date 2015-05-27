@@ -88,6 +88,7 @@ static void cpu_bringup(void)
 	notify_cpu_starting(cpu);
 
 	set_cpu_online(cpu, true);
+        set_cpu_freeze(cpu, false);
 
 	this_cpu_write(cpu_state, CPU_ONLINE);
 
