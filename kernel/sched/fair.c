@@ -4107,6 +4107,10 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 		int local_group;
 		int i;
 
+                if ( cpumask_subset(sched_group_cpus(group), cpu_freeze_mask) &&
+                     !(p->flags & PF_KTHREAD))
+                        continue;
+
 		/* Skip over this group if it has no CPUs allowed */
 		if (!cpumask_intersects(sched_group_cpus(group),
 					tsk_cpus_allowed(p)))
@@ -4156,6 +4160,9 @@ find_idlest_cpu(struct sched_group *group, struct task_struct *p, int this_cpu)
 
 	/* Traverse only the allowed CPUs */
 	for_each_cpu_and(i, sched_group_cpus(group), tsk_cpus_allowed(p)) {
+                if ( cpu_freeze(i) && !(p->flags & PF_KTHREAD) )
+                        continue;
+
 		load = weighted_cpuload(i);
 
 		if (load < min_load || (load == min_load && i == this_cpu)) {
@@ -4175,14 +4182,19 @@ static int select_idle_sibling(struct task_struct *p, int target)
 	struct sched_domain *sd;
 	struct sched_group *sg;
 	int i = task_cpu(p);
+        struct cpumask allowed_cpus;
+        
+        cpumask_andnot(&allowed_cpus, cpu_online_mask, cpu_freeze_mask);
+        cpumask_and(&allowed_cpus, &allowed_cpus, tsk_cpus_allowed(p));
 
-	if (idle_cpu(target))
+	if ( idle_cpu(target) && (!cpu_freeze(target)) )
 		return target;
 
 	/*
 	 * If the prevous cpu is cache affine and idle, don't be stupid.
 	 */
-	if (i != target && cpus_share_cache(i, target) && idle_cpu(i))
+	if ( i != target && cpus_share_cache(i, target) && idle_cpu(i) &&
+             (!cpu_freeze(i)) )
 		return i;
 
 	/*
@@ -4201,14 +4213,21 @@ static int select_idle_sibling(struct task_struct *p, int target)
 					goto next;
 			}
 
+                        /*
 			target = cpumask_first_and(sched_group_cpus(sg),
 					tsk_cpus_allowed(p));
+                        */
+
+                        target = cpumask_first_and(sched_group_cpus(sg),
+                                        &allowed_cpus);
+
 			goto done;
 next:
 			sg = sg->next;
 		} while (sg != sd->groups);
 	}
 done:
+
 	return target;
 }
 
@@ -4238,7 +4257,9 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 	if (sd_flag & SD_BALANCE_WAKE) {
 		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
 			want_affine = 1;
-		new_cpu = prev_cpu;
+
+                if ( !cpu_freeze(prev_cpu) || (p->flags & PF_KTHREAD) )
+		        new_cpu = prev_cpu;
 	}
 
 	rcu_read_lock();
@@ -4265,7 +4286,8 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 			prev_cpu = cpu;
 
 		new_cpu = select_idle_sibling(p, prev_cpu);
-		goto unlock;
+                if ( !cpu_freeze(new_cpu) || (p->flags & PF_KTHREAD) )
+		        goto unlock;
 	}
 
 	while (sd) {
@@ -4865,6 +4887,10 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
 	 * 3) running (obviously), or
 	 * 4) are cache-hot on their current CPU.
 	 */
+
+        if ( cpu_freeze(env->dst_cpu) && !(p->flags & PF_KTHREAD) )
+                return 0;
+
 	if (throttled_lb_pair(task_group(p), env->src_cpu, env->dst_cpu))
 		return 0;
 
@@ -5987,7 +6013,7 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 
 	for_each_cpu_and(i, sched_group_cpus(group), env->cpus) {
 		unsigned long power, capacity, wl;
-		enum fbq_type rt;
+                enum fbq_type rt;
 
 		rq = cpu_rq(i);
 		rt = fbq_classify_rq(rq);
