@@ -4785,20 +4785,7 @@ static void migrate_tasks(unsigned int dead_cpu)
 
 SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 {
-        int i;
-
-        printk("freezecpu %u\n", cpu);
-
-        cpu_freeze_begin();
-        set_cpu_freeze(cpu, freeze);
-        cpu_freeze_done();
-
-        for_each_freeze_cpu(i)
-        {
-                printk("frozen cpu %d\n", i);
-        }
-
-        return 0;
+	return 0;
 }
 
 #endif /* CONFIG_HOTPLUG_CPU */
