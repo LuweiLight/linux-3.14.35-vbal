@@ -558,7 +558,8 @@ static void xen_stop_other_cpus(int wait)
 
 static void xen_smp_send_reschedule(int cpu)
 {
-	xen_send_IPI_one(cpu, XEN_RESCHEDULE_VECTOR);
+	if (!cpu_freeze(cpu))
+		xen_send_IPI_one(cpu, XEN_RESCHEDULE_VECTOR);
 }
 
 static void __xen_send_IPI_mask(const struct cpumask *mask,
