@@ -1253,6 +1253,8 @@ static int select_fallback_rq(int cpu, struct task_struct *p)
 
 		/* Look for allowed, online CPU in same node. */
 		for_each_cpu(dest_cpu, nodemask) {
+			if ( cpu_freeze(cpu) && !(p->flags & PF_KTHREAD) )
+				continue;
 			if (!cpu_online(dest_cpu))
 				continue;
 			if (!cpu_active(dest_cpu))
@@ -1265,6 +1267,8 @@ static int select_fallback_rq(int cpu, struct task_struct *p)
 	for (;;) {
 		/* Any allowed, online CPU? */
 		for_each_cpu(dest_cpu, tsk_cpus_allowed(p)) {
+			if ( cpu_freeze(dest_cpu) && !(p->flags & PF_KTHREAD) )
+				continue;
 			if (!cpu_online(dest_cpu))
 				continue;
 			if (!cpu_active(dest_cpu))
@@ -1325,7 +1329,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
 	 *   not worry about this generic constraint ]
 	 */
 	if (unlikely(!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)) ||
-		     !cpu_online(cpu)))
+		     !cpu_online(cpu)) || (cpu_freeze(cpu) && !(p->flags & PF_KTHREAD)) )
 		cpu = select_fallback_rq(task_cpu(p), p);
 
 	return cpu;
@@ -2592,6 +2596,8 @@ pick_next_task(struct rq *rq)
 	BUG(); /* the idle class will always have a runnable task */
 }
 
+static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu);
+
 /*
  * __schedule() is the main scheduler function.
  *
@@ -2635,6 +2641,7 @@ static void __sched __schedule(void)
 	unsigned long *switch_count;
 	struct rq *rq;
 	int cpu;
+	int dest_cpu;
 
 need_resched:
 	preempt_disable();
@@ -2682,11 +2689,27 @@ need_resched:
 
 	pre_schedule(rq, prev);
 
-	if (unlikely(!rq->nr_running))
+	if (unlikely(!rq->nr_running) && !cpu_freeze(cpu))
 		idle_balance(cpu, rq);
 
 	put_prev_task(rq, prev);
+	if ( cpu_freeze(cpu) && !(prev->flags & PF_KTHREAD) ) {
+		dest_cpu = select_fallback_rq(cpu, prev);
+		raw_spin_unlock(&rq->lock);
+		__migrate_task(prev, cpu, dest_cpu);
+		raw_spin_lock(&rq->lock);
+	}
+
 	next = pick_next_task(rq);
+	while ( cpu_freeze(cpu) && !(next->flags & PF_KTHREAD) ) {
+		put_prev_task(rq, next);
+		dest_cpu = select_fallback_rq(cpu, next);
+		raw_spin_unlock(&rq->lock);
+		__migrate_task(next, cpu, dest_cpu);
+		raw_spin_lock(&rq->lock);
+		next = pick_next_task(rq);
+	}
+
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
 	rq->skip_clock_update = 0;
@@ -4783,8 +4806,42 @@ static void migrate_tasks(unsigned int dead_cpu)
 	rq->stop = stop;
 }
 
+static void sched_ttwu_pending_remote(unsigned int cpu)
+{
+	struct rq *rq = cpu_rq(cpu);
+	struct llist_node *llist = llist_del_all(&rq->wake_list);
+	struct task_struct *p;
+
+	raw_spin_lock(&rq->lock);
+	while (llist) {
+		p = llist_entry(llist, struct task_struct, wake_entry);
+		llist = llist_next(llist);
+		ttwu_do_activate(rq, p, 0);
+	}
+
+	raw_spin_unlock(&rq->lock);
+}
+
 SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 {
+	// printk("sys_freezecpu %u\n", cpu);
+
+	set_cpu_freeze(cpu, freeze);
+
+	// Optional
+	sched_ttwu_pending_remote(cpu);
+
+	// Optional
+	smp_send_reschedule(cpu);
+
+	/*
+	printk("frozen cpus:");
+	for_each_freeze_cpu(i) {
+		printk(" %d", i);
+	}
+	printk("\n");
+	*/
+
 	return 0;
 }
 
