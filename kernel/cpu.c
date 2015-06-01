@@ -133,16 +133,6 @@ void cpu_hotplug_done(void)
 	mutex_unlock(&cpu_hotplug.lock);
 }
 
-void cpu_freeze_begin(void)
-{
-        mutex_lock(&cpu_hotplug.lock);
-}
-
-void cpu_freeze_done(void)
-{
-        mutex_unlock(&cpu_hotplug.lock);
-}
-
 /*
  * Wait for currently running CPU hotplug operations to complete (if any) and
  * disable future CPU hotplug (from sysfs). The 'cpu_add_remove_lock' protects
