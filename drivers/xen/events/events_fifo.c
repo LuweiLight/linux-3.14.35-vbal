@@ -274,12 +274,18 @@ static void handle_irq_for_port(unsigned port)
 {
 	int irq;
 	struct irq_desc *desc;
+	int cpu = smp_processor_id();
 
 	irq = get_evtchn_to_irq(port);
 	if (irq != -1) {
 		desc = irq_to_desc(irq);
 		if (desc)
 			generic_handle_irq_desc(irq, desc);
+	}
+
+	if (cpu_freeze(cpu) && (type_from_irq(irq) == IRQT_EVTCHN)) {
+		// printk("migrate irq %d: cpu %d -> cpu 0\n", irq, cpu);
+		rebind_irq_to_cpu(irq, 0);
 	}
 }
 

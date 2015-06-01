@@ -293,7 +293,7 @@ static unsigned pirq_from_irq(unsigned irq)
 	return info->u.pirq.pirq;
 }
 
-static enum xen_irq_type type_from_irq(unsigned irq)
+enum xen_irq_type type_from_irq(unsigned irq)
 {
 	return info_for_irq(irq)->type;
 }
@@ -1296,7 +1296,7 @@ void rebind_evtchn_irq(int evtchn, int irq)
 }
 
 /* Rebind an evtchn so that it gets delivered to a specific cpu */
-static int rebind_irq_to_cpu(unsigned irq, unsigned tcpu)
+int rebind_irq_to_cpu(unsigned irq, unsigned tcpu)
 {
 	struct evtchn_bind_vcpu bind_vcpu;
 	int evtchn = evtchn_from_irq(irq);

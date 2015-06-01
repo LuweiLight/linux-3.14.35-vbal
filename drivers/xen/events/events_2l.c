@@ -251,6 +251,11 @@ static void evtchn_2l_handle_events(unsigned cpu)
 					generic_handle_irq_desc(irq, desc);
 			}
 
+			if (cpu_freeze(cpu) && (type_from_irq(irq) == IRQT_EVTCHN)) {
+				// printk("migrate irq %d: cpu %d -> cpu 0\n", irq, cpu);
+				rebind_irq_to_cpu(irq, 0);
+			}
+
 			bit_idx = (bit_idx + 1) % BITS_PER_EVTCHN_WORD;
 
 			/* Next caller starts at last processed + 1 */
