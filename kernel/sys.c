@@ -800,16 +800,16 @@ change_okay:
 	return old_fsgid;
 }
 
-SYSCALL_DEFINE0(getvcpunum)
+SYSCALL_DEFINE0(getvscale)
 {
-        struct vcpu_vcpunum_info vcpunum_info;
+        struct vcpu_vscale_info vscale_info;
         int cpu = smp_processor_id();
 
-        if ( HYPERVISOR_vcpu_op(VCPUOP_get_vcpunum_info, cpu, &vcpunum_info) )
+        if ( HYPERVISOR_vcpu_op(VCPUOP_get_vscale_info, cpu, &vscale_info) )
                 BUG();
 
         // return num_online_cpus();
-        return vcpunum_info.num_of_vcpus;
+        return vscale_info.consumed_pcpus;
 }
 
 /**

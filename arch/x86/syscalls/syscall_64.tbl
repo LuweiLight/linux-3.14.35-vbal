@@ -322,7 +322,7 @@
 313	common	finit_module		sys_finit_module
 314	common	sched_setattr		sys_sched_setattr
 315	common	sched_getattr		sys_sched_getattr
-316     common  getvcpunum              sys_getvcpunum
+316     common  getvscale               sys_getvscale
 317     common  freezecpu               sys_freezecpu
 
 #
