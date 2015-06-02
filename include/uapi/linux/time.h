@@ -17,6 +17,11 @@ struct timeval {
 	__kernel_suseconds_t	tv_usec;	/* microseconds */
 };
 
+struct vscale_info {
+	__u64 consumed_pcpus;
+	__u64 max_pcpus;
+};
+
 struct timezone {
 	int	tz_minuteswest;	/* minutes west of Greenwich */
 	int	tz_dsttime;	/* type of dst correction */
