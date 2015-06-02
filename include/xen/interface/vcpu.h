@@ -175,7 +175,7 @@ DEFINE_GUEST_HANDLE_STRUCT(vcpu_register_vcpu_info);
 
 #define VCPUOP_get_vscale_info      14
 struct vcpu_vscale_info {
-	uint64_t consumed_pcpus;
+	uint64_t consumed_cents;
 	uint64_t max_pcpus;
 };
 DEFINE_GUEST_HANDLE_STRUCT(vcpu_vscale_info);

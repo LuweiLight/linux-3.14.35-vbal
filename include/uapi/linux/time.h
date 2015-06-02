@@ -18,7 +18,7 @@ struct timeval {
 };
 
 struct vscale_info {
-	__u64 consumed_pcpus;
+	__u64 consumed_cents;
 	__u64 max_pcpus;
 };
 
