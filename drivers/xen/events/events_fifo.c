@@ -275,6 +275,7 @@ static void handle_irq_for_port(unsigned port)
 	int irq;
 	struct irq_desc *desc;
 	int cpu = smp_processor_id();
+	// ktime_t start, end;
 
 	irq = get_evtchn_to_irq(port);
 	if (irq != -1) {
@@ -284,8 +285,12 @@ static void handle_irq_for_port(unsigned port)
 	}
 
 	if (cpu_freeze(cpu) && (type_from_irq(irq) == IRQT_EVTCHN)) {
-		// printk("migrate irq %d: cpu %d -> cpu 0\n", irq, cpu);
+		// start = ktime_get();
 		rebind_irq_to_cpu(irq, 0);
+		// end = ktime_get();
+
+		// printk("migrate irq %d: cpu %d -> cpu 0, cost: %lluns\n", 
+		//	irq, cpu, ktime_to_ns(ktime_sub(end, start)));
 	}
 }
 
