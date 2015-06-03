@@ -2642,6 +2642,8 @@ static void __sched __schedule(void)
 	struct rq *rq;
 	int cpu;
 	int dest_cpu;
+	// ktime_t start, end;
+	// int count;
 
 need_resched:
 	preempt_disable();
@@ -2694,14 +2696,22 @@ need_resched:
 
 	put_prev_task(rq, prev);
 	if ( cpu_freeze(cpu) && !(prev->flags & PF_KTHREAD) ) {
+		// start = ktime_get();
 		dest_cpu = select_fallback_rq(cpu, prev);
 		raw_spin_unlock(&rq->lock);
 		__migrate_task(prev, cpu, dest_cpu);
 		raw_spin_lock(&rq->lock);
+		// end = ktime_get();
+
+		// printk("[%llu] migrate 1 task: %lluns\n", 
+		//	ktime_to_ns(ktime_get()), ktime_to_ns(ktime_sub(end, start)));
 	}
 
 	next = pick_next_task(rq);
+	// count = 0;
+	// start = ktime_get();
 	while ( cpu_freeze(cpu) && !(next->flags & PF_KTHREAD) ) {
+		// count++;
 		put_prev_task(rq, next);
 		dest_cpu = select_fallback_rq(cpu, next);
 		raw_spin_unlock(&rq->lock);
@@ -2709,6 +2719,11 @@ need_resched:
 		raw_spin_lock(&rq->lock);
 		next = pick_next_task(rq);
 	}
+	// end = ktime_get();
+	// if (count > 0) {
+	//	printk("[%llu] migrate %d tasks: %lluns\n", 
+	//		ktime_to_ns(ktime_get()), count, ktime_to_ns(ktime_sub(end, start)));
+	// }
 
 	clear_tsk_need_resched(prev);
 	clear_preempt_need_resched();
