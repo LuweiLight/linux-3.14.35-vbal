@@ -18,8 +18,8 @@ struct timeval {
 };
 
 struct vscale_info {
-	__u64 consumed_cents;
-	__u64 max_pcpus;
+	__u32 consumed_cents;
+	__u32 max_cents;
 };
 
 struct timezone {
