@@ -2695,6 +2695,8 @@ need_resched:
 		idle_balance(cpu, rq);
 
 	put_prev_task(rq, prev);
+	// Do not be silly here: the context of prev is in _this_ cpu
+	/*
 	if ( cpu_freeze(cpu) && !(prev->flags & PF_KTHREAD) ) {
 		// start = ktime_get();
 		dest_cpu = select_fallback_rq(cpu, prev);
@@ -2706,6 +2708,7 @@ need_resched:
 		// printk("[%llu] migrate 1 task: %lluns\n", 
 		//	ktime_to_ns(ktime_get()), ktime_to_ns(ktime_sub(end, start)));
 	}
+	*/
 
 	next = pick_next_task(rq);
 	// count = 0;
@@ -2719,6 +2722,7 @@ need_resched:
 		raw_spin_lock(&rq->lock);
 		next = pick_next_task(rq);
 	}
+	
 	// end = ktime_get();
 	// if (count > 0) {
 	//	printk("[%llu] migrate %d tasks: %lluns\n", 
