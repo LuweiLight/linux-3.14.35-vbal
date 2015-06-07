@@ -17,9 +17,14 @@ struct timeval {
 	__kernel_suseconds_t	tv_usec;	/* microseconds */
 };
 
-struct vscale_info {
+struct get_vscale_info {
 	__u32 consumed_cents;
 	__u32 max_cents;
+	__u32 period_ms;
+};
+
+struct set_vscale_info {
+	__u32 period_ms;
 };
 
 struct timezone {

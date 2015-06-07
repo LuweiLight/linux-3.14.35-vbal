@@ -174,10 +174,17 @@ DEFINE_GUEST_HANDLE_STRUCT(vcpu_register_vcpu_info);
 #define VCPUOP_send_nmi             11
 
 #define VCPUOP_get_vscale_info      14
-struct vcpu_vscale_info {
+struct vcpu_get_vscale_info {
 	uint32_t consumed_cents;
 	uint32_t max_cents;
+	uint32_t period_ms;
 };
-DEFINE_GUEST_HANDLE_STRUCT(vcpu_vscale_info);
+DEFINE_GUEST_HANDLE_STRUCT(vcpu_get_vscale_info);
+
+#define VCPUOP_set_vscale_info      15
+struct vcpu_set_vscale_info {
+	uint32_t period_ms;
+};
+DEFINE_GUEST_HANDLE_STRUCT(vcpu_set_vscale_info);
 
 #endif /* __XEN_PUBLIC_VCPU_H__ */

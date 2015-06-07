@@ -800,15 +800,26 @@ change_okay:
 	return old_fsgid;
 }
 
-SYSCALL_DEFINE1(getvscale, struct vscale_info __user *, u_info)
+SYSCALL_DEFINE1(getvscaleinfo, struct get_vscale_info __user *, u_info)
 {
-        struct vcpu_vscale_info k_info;
+        struct vcpu_get_vscale_info k_info;
         int cpu = smp_processor_id();
 
         if ( HYPERVISOR_vcpu_op(VCPUOP_get_vscale_info, cpu, &k_info) )
                 BUG();
 
 	copy_to_user(u_info, &k_info, sizeof(k_info));
+
+	return 0;
+}
+SYSCALL_DEFINE1(setvscaleinfo, struct set_vscale_info __user *, u_info)
+{
+	struct vcpu_set_vscale_info k_info;
+	int cpu = smp_processor_id();
+	copy_from_user(&k_info, u_info, sizeof(k_info));
+
+	if ( HYPERVISOR_vcpu_op(VCPUOP_set_vscale_info, cpu, &k_info) )
+		BUG();
 
 	return 0;
 }

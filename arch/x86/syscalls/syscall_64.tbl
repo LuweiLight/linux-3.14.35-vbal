@@ -322,8 +322,9 @@
 313	common	finit_module		sys_finit_module
 314	common	sched_setattr		sys_sched_setattr
 315	common	sched_getattr		sys_sched_getattr
-316     common  getvscale               sys_getvscale
-317     common  freezecpu               sys_freezecpu
+316     common  getvscaleinfo           sys_getvscaleinfo
+317	common  setvscaleinfo           sys_setvscaleinfo
+318     common  freezecpu               sys_freezecpu
 
 #
 # x32-specific system call numbers start at 512 to avoid cache impact
