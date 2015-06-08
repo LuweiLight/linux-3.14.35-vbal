@@ -2642,6 +2642,7 @@ static void __sched __schedule(void)
 	struct rq *rq;
 	int cpu;
 	int dest_cpu;
+	struct rq *dest_rq;
 	// ktime_t start, end;
 	// int count;
 
@@ -2696,19 +2697,6 @@ need_resched:
 
 	put_prev_task(rq, prev);
 	// Do not be silly here: the context of prev is in _this_ cpu
-	/*
-	if ( cpu_freeze(cpu) && !(prev->flags & PF_KTHREAD) ) {
-		// start = ktime_get();
-		dest_cpu = select_fallback_rq(cpu, prev);
-		raw_spin_unlock(&rq->lock);
-		__migrate_task(prev, cpu, dest_cpu);
-		raw_spin_lock(&rq->lock);
-		// end = ktime_get();
-
-		// printk("[%llu] migrate 1 task: %lluns\n", 
-		//	ktime_to_ns(ktime_get()), ktime_to_ns(ktime_sub(end, start)));
-	}
-	*/
 
 	next = pick_next_task(rq);
 	// count = 0;
@@ -2716,13 +2704,19 @@ need_resched:
 	while ( cpu_freeze(cpu) && !(next->flags & PF_KTHREAD) ) {
 		// count++;
 		put_prev_task(rq, next);
+		//dest_cpu = select_task_rq(next, cpu, SD_LOAD_BALANCE, 0);
 		dest_cpu = select_fallback_rq(cpu, next);
-		raw_spin_unlock(&rq->lock);
-		__migrate_task(next, cpu, dest_cpu);
-		raw_spin_lock(&rq->lock);
+		dest_rq = cpu_rq(dest_cpu);
+
+		raw_spin_lock_irq(&dest_rq->lock);
+		deactivate_task(rq, next, 0);
+		set_task_cpu(next, dest_cpu);
+		activate_task(dest_rq, next, 0);
+		//check_preempt_curr(dest_rq, next, 0);
+		raw_spin_unlock_irq(&dest_rq->lock);
+
 		next = pick_next_task(rq);
-	}
-	
+	}	
 	// end = ktime_get();
 	// if (count > 0) {
 	//	printk("[%llu] migrate %d tasks: %lluns\n", 
@@ -4825,30 +4819,19 @@ static void migrate_tasks(unsigned int dead_cpu)
 	rq->stop = stop;
 }
 
-static void sched_ttwu_pending_remote(unsigned int cpu)
-{
-	struct rq *rq = cpu_rq(cpu);
-	struct llist_node *llist = llist_del_all(&rq->wake_list);
-	struct task_struct *p;
-
-	raw_spin_lock(&rq->lock);
-	while (llist) {
-		p = llist_entry(llist, struct task_struct, wake_entry);
-		llist = llist_next(llist);
-		ttwu_do_activate(rq, p, 0);
-	}
-
-	raw_spin_unlock(&rq->lock);
-}
-
 SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 {
+	struct sched_domain *sd;
+
 	// printk("sys_freezecpu %u\n", cpu);
 
 	set_cpu_freeze(cpu, freeze);
 
-	// Optional
-	sched_ttwu_pending_remote(cpu);
+	rcu_read_lock();
+	for_each_domain(cpu, sd) {
+		update_group_power(sd, cpu);
+	}
+	rcu_read_unlock();
 
 	// Optional
 	smp_send_reschedule(cpu);
