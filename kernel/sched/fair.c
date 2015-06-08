@@ -4123,6 +4123,9 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 		avg_load = 0;
 
 		for_each_cpu(i, sched_group_cpus(group)) {
+			if ( cpu_freeze(i) )
+				continue;
+
 			/* Bias balancing toward cpus of our domain */
 			if (local_group)
 				load = source_load(i, load_idx);
@@ -5384,6 +5387,9 @@ void update_group_power(struct sched_domain *sd, int cpu)
 			struct sched_group_power *sgp;
 			struct rq *rq = cpu_rq(cpu);
 
+			if ( cpu_freeze(cpu) )
+				continue;
+
 			/*
 			 * build_sched_domains() -> init_sched_groups_power()
 			 * gets here before we've attached the domains to the
@@ -6008,6 +6014,9 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 	for_each_cpu_and(i, sched_group_cpus(group), env->cpus) {
 		unsigned long power, capacity, wl;
 		enum fbq_type rt;
+
+		if ( cpu_freeze(i) )
+			continue;
 
 		rq = cpu_rq(i);
 		rt = fbq_classify_rq(rq);

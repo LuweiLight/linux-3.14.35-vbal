@@ -2704,8 +2704,8 @@ need_resched:
 	while ( cpu_freeze(cpu) && !(next->flags & PF_KTHREAD) ) {
 		// count++;
 		put_prev_task(rq, next);
-		//dest_cpu = select_task_rq(next, cpu, SD_LOAD_BALANCE, 0);
-		dest_cpu = select_fallback_rq(cpu, next);
+		dest_cpu = select_task_rq(next, cpu, SD_LOAD_BALANCE, 0);
+		//dest_cpu = select_fallback_rq(cpu, next);
 		dest_rq = cpu_rq(dest_cpu);
 
 		raw_spin_lock_irq(&dest_rq->lock);
