@@ -4108,7 +4108,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 		int i;
 		
 		if ( cpumask_subset(sched_group_cpus(group), cpu_freeze_mask) &&
-		     !(p->flags & PF_KTHREAD))
+		     !(p->flags & PF_KTHREAD) )
 			continue;
 
 		/* Skip over this group if it has no CPUs allowed */
@@ -4123,7 +4123,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 		avg_load = 0;
 
 		for_each_cpu(i, sched_group_cpus(group)) {
-			if ( cpu_freeze(i) )
+			if ( cpu_freeze(i) && !(p->flags & PF_KTHREAD) )
 				continue;
 
 			/* Bias balancing toward cpus of our domain */
@@ -4185,19 +4185,14 @@ static int select_idle_sibling(struct task_struct *p, int target)
 	struct sched_domain *sd;
 	struct sched_group *sg;
 	int i = task_cpu(p);
-	struct cpumask allowed_cpus;
 
-	cpumask_andnot(&allowed_cpus, cpu_online_mask, cpu_freeze_mask);
-	cpumask_and(&allowed_cpus, &allowed_cpus, tsk_cpus_allowed(p));
-	
-	if ( idle_cpu(target) && (!cpu_freeze(target)) )
+	if (idle_cpu(target))
 		return target;
 
 	/*
 	 * If the prevous cpu is cache affine and idle, don't be stupid.
 	 */
-	if ( i != target && cpus_share_cache(i, target) && idle_cpu(i) &&
-	    !cpu_freeze(i) )
+	if (i != target && cpus_share_cache(i, target) && idle_cpu(i))
 		return i;
 
 	/*
@@ -4217,7 +4212,7 @@ static int select_idle_sibling(struct task_struct *p, int target)
 			}
 			
 			target = cpumask_first_and(sched_group_cpus(sg),
-					&allowed_cpus);
+					tsk_cpus_allowed(p));
 
 			goto done;
 next:
