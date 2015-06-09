@@ -97,6 +97,22 @@ struct sched_watchdog {
     uint32_t timeout;           /* timeout */
 };
 
+#define SCHEDOP_get_vscale_info 7
+struct sched_get_vscale_info {
+    uint32_t consumed_cents;
+    uint32_t max_cents;
+    uint32_t period_ms;
+};
+typedef struct sched_get_vscale_info sched_get_vscale_info_t;
+DEFINE_GUEST_HANDLE_STRUCT(sched_get_vscale_info_t);
+
+#define SCHEDOP_set_vscale_info 8
+struct sched_set_vscale_info {
+    uint32_t period_ms;
+};
+typedef struct sched_set_vscale_info sched_set_vscale_info_t;
+DEFINE_GUEST_HANDLE_STRUCT(sched_set_vscale_info_t);
+
 /*
  * Reason codes for SCHEDOP_shutdown. These may be interpreted by control
  * software to determine the appropriate action. For the most part, Xen does

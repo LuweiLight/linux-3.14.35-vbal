@@ -61,7 +61,7 @@
 #include <asm/io.h>
 #include <asm/unistd.h>
 
-#include <xen/interface/vcpu.h>
+#include <xen/interface/sched.h>
 #include <asm/xen/hypercall.h>
 
 #ifndef SET_UNALIGN_CTL
@@ -802,10 +802,9 @@ change_okay:
 
 SYSCALL_DEFINE1(getvscaleinfo, struct get_vscale_info __user *, u_info)
 {
-        struct vcpu_get_vscale_info k_info;
-        int cpu = smp_processor_id();
+        struct sched_get_vscale_info k_info;
 
-        if ( HYPERVISOR_vcpu_op(VCPUOP_get_vscale_info, cpu, &k_info) )
+        if ( HYPERVISOR_sched_op(SCHEDOP_get_vscale_info, &k_info) )
                 BUG();
 
 	copy_to_user(u_info, &k_info, sizeof(k_info));
@@ -814,11 +813,11 @@ SYSCALL_DEFINE1(getvscaleinfo, struct get_vscale_info __user *, u_info)
 }
 SYSCALL_DEFINE1(setvscaleinfo, struct set_vscale_info __user *, u_info)
 {
-	struct vcpu_set_vscale_info k_info;
-	int cpu = smp_processor_id();
+	struct sched_set_vscale_info k_info;
+
 	copy_from_user(&k_info, u_info, sizeof(k_info));
 
-	if ( HYPERVISOR_vcpu_op(VCPUOP_set_vscale_info, cpu, &k_info) )
+	if ( HYPERVISOR_sched_op(SCHEDOP_set_vscale_info, &k_info) )
 		BUG();
 
 	return 0;
