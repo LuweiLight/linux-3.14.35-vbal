@@ -113,6 +113,20 @@ struct sched_set_vscale_info {
 typedef struct sched_set_vscale_info sched_set_vscale_info_t;
 DEFINE_GUEST_HANDLE_STRUCT(sched_set_vscale_info_t);
 
+#define SCHEDOP_vcpu_freeze	9
+struct sched_vcpu_freeze {
+    uint32_t vcpu_id;
+};
+typedef struct sched_vcpu_freeze sched_vcpu_freeze_t;
+DEFINE_GUEST_HANDLE_STRUCT(sched_vcpu_freeze_t);
+
+#define SCHEDOP_vcpu_defreeze	10
+struct sched_vcpu_defreeze {
+    uint32_t vcpu_id;
+};
+typedef struct sched_vcpu_defreeze sched_vcpu_defreeze_t;
+DEFINE_GUEST_HANDLE_STRUCT(sched_vcpu_defreeze_t);
+
 /*
  * Reason codes for SCHEDOP_shutdown. These may be interpreted by control
  * software to determine the appropriate action. For the most part, Xen does

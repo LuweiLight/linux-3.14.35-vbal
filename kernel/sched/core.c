@@ -82,6 +82,9 @@
 #include <asm/paravirt.h>
 #endif
 
+#include <xen/interface/sched.h>
+#include <asm/xen/hypercall.h>
+
 #include "sched.h"
 #include "../workqueue_internal.h"
 #include "../smpboot.h"
@@ -4821,11 +4824,24 @@ static void migrate_tasks(unsigned int dead_cpu)
 
 SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 {
+	struct sched_vcpu_freeze freeze_info;
+	struct sched_vcpu_defreeze defreeze_info;
 	struct sched_domain *sd;
 
 	// printk("sys_freezecpu %u\n", cpu);
 
+	freeze_info.vcpu_id = cpu;
+	defreeze_info.vcpu_id = cpu;
+
 	set_cpu_freeze(cpu, freeze);
+
+	if (freeze) {
+		if (HYPERVISOR_sched_op(SCHEDOP_vcpu_freeze, &freeze_info))
+			BUG();
+	} else {
+		if (HYPERVISOR_sched_op(SCHEDOP_vcpu_defreeze, &defreeze_info))
+			BUG();
+	}
 
 	rcu_read_lock();
 	for_each_domain(cpu, sd) {
