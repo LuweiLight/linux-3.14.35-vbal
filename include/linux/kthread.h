@@ -4,6 +4,38 @@
 #include <linux/err.h>
 #include <linux/sched.h>
 
+
+struct kthread {
+	unsigned long flags;
+	unsigned int cpu;
+	void *data;
+	struct completion parked;
+	struct completion exited;
+};
+
+enum KTHREAD_BITS {
+	KTHREAD_IS_PER_CPU = 0,
+	KTHREAD_SHOULD_STOP,
+	KTHREAD_SHOULD_PARK,
+	KTHREAD_IS_PARKED,
+};
+
+#define __to_kthread(vfork)     \
+	container_of(vfork, struct kthread, exited)
+
+static inline struct kthread *to_kthread(struct task_struct *k)
+{
+	return __to_kthread(k->vfork_done);
+}
+
+static inline struct kthread *to_live_kthread(struct task_struct *k)
+{
+	struct completion *vfork = ACCESS_ONCE(k->vfork_done);
+	if (likely(vfork))
+		return __to_kthread(vfork);
+	return NULL;
+}
+
 __printf(4, 5)
 struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 					   void *data,

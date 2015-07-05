@@ -38,6 +38,7 @@ struct kthread_create_info
 	struct list_head list;
 };
 
+/*
 struct kthread {
 	unsigned long flags;
 	unsigned int cpu;
@@ -68,6 +69,7 @@ static struct kthread *to_live_kthread(struct task_struct *k)
 		return __to_kthread(vfork);
 	return NULL;
 }
+*/
 
 /**
  * kthread_should_stop - should this kthread return now?
