@@ -1256,7 +1256,7 @@ static int select_fallback_rq(int cpu, struct task_struct *p)
 
 		/* Look for allowed, online CPU in same node. */
 		for_each_cpu(dest_cpu, nodemask) {
-			if ( cpu_freeze(cpu) && !(p->flags & PF_KTHREAD) )
+			if ( cpu_freeze(dest_cpu) && vscale_is_migratable(p) )
 				continue;
 			if (!cpu_online(dest_cpu))
 				continue;
@@ -1270,7 +1270,7 @@ static int select_fallback_rq(int cpu, struct task_struct *p)
 	for (;;) {
 		/* Any allowed, online CPU? */
 		for_each_cpu(dest_cpu, tsk_cpus_allowed(p)) {
-			if ( cpu_freeze(dest_cpu) && !(p->flags & PF_KTHREAD) )
+			if ( cpu_freeze(dest_cpu) && vscale_is_migratable(p) )
 				continue;
 			if (!cpu_online(dest_cpu))
 				continue;
@@ -1332,7 +1332,9 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
 	 *   not worry about this generic constraint ]
 	 */
 	if (unlikely(!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)) ||
-		     !cpu_online(cpu)) || (cpu_freeze(cpu) && !(p->flags & PF_KTHREAD)) )
+		     !cpu_online(cpu)) || 
+		     ( cpu_freeze(cpu) && vscale_is_migratable(p) ) 
+	   )
 		cpu = select_fallback_rq(task_cpu(p), p);
 
 	return cpu;
@@ -2695,7 +2697,7 @@ need_resched:
 
 	pre_schedule(rq, prev);
 
-	if (unlikely(!rq->nr_running) && !cpu_freeze(cpu))
+	if (unlikely(!rq->nr_running))
 		idle_balance(cpu, rq);
 
 	put_prev_task(rq, prev);
@@ -2704,7 +2706,7 @@ need_resched:
 	next = pick_next_task(rq);
 	// count = 0;
 	// start = ktime_get();
-	while ( cpu_freeze(cpu) && !(next->flags & PF_KTHREAD) ) {
+	while ( cpu_freeze(cpu) && vscale_is_migratable(next) ) {
 		// count++;
 		put_prev_task(rq, next);
 		dest_cpu = select_task_rq(next, cpu, SD_LOAD_BALANCE, 0);

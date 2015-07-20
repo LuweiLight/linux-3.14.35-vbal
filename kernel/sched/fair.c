@@ -4108,7 +4108,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 		int i;
 		
 		if ( cpumask_subset(sched_group_cpus(group), cpu_freeze_mask) &&
-		     !(p->flags & PF_KTHREAD) )
+		     vscale_is_migratable(p) )
 			continue;
 
 		/* Skip over this group if it has no CPUs allowed */
@@ -4123,7 +4123,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
 		avg_load = 0;
 
 		for_each_cpu(i, sched_group_cpus(group)) {
-			if ( cpu_freeze(i) && !(p->flags & PF_KTHREAD) )
+			if ( cpu_freeze(i) && vscale_is_migratable(p) )
 				continue;
 
 			/* Bias balancing toward cpus of our domain */
@@ -4163,7 +4163,7 @@ find_idlest_cpu(struct sched_group *group, struct task_struct *p, int this_cpu)
 
 	/* Traverse only the allowed CPUs */
 	for_each_cpu_and(i, sched_group_cpus(group), tsk_cpus_allowed(p)) {
-		if ( cpu_freeze(i) && !(p->flags & PF_KTHREAD) )
+		if ( cpu_freeze(i) && vscale_is_migratable(p) )
 			continue;
 
 		load = weighted_cpuload(i);
@@ -4250,7 +4250,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
 			want_affine = 1;
 		
-		if ( !cpu_freeze(prev_cpu) || (p->flags & PF_KTHREAD) )
+		if ( !cpu_freeze(prev_cpu) || !vscale_is_migratable(p) )
 			new_cpu = prev_cpu;
 	}
 
@@ -4278,7 +4278,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 			prev_cpu = cpu;
 
 		new_cpu = select_idle_sibling(p, prev_cpu);
-		if ( !cpu_freeze(new_cpu) || (p->flags & PF_KTHREAD) )
+		if ( !cpu_freeze(new_cpu) || !vscale_is_migratable(p) )
 			goto unlock;
 	}
 
@@ -4880,7 +4880,7 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
 	 * 4) are cache-hot on their current CPU.
 	 */
 	
-	if ( cpu_freeze(env->dst_cpu) && !(p->flags & PF_KTHREAD) )
+	if ( cpu_freeze(env->dst_cpu) && vscale_is_migratable(p) )
 		return 0;
 
 	if (throttled_lb_pair(task_group(p), env->src_cpu, env->dst_cpu))
