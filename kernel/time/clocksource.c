@@ -251,7 +251,7 @@ static void clocksource_watchdog(unsigned long data)
 	struct clocksource *cs;
 	cycle_t csnow, wdnow;
 	int64_t wd_nsec, cs_nsec;
-	int next_cpu, reset_pending;
+	int start_cpu, next_cpu, reset_pending;
 
 	spin_lock(&watchdog_lock);
 	if (!watchdog_running)
@@ -340,9 +340,13 @@ static void clocksource_watchdog(unsigned long data)
 	 * Cycle through CPUs to check if the CPUs stay synchronized
 	 * to each other.
 	 */
-	next_cpu = cpumask_next(raw_smp_processor_id(), cpu_online_mask);
-	if (next_cpu >= nr_cpu_ids)
-		next_cpu = cpumask_first(cpu_online_mask);
+	start_cpu = raw_smp_processor_id();
+	do {
+		next_cpu = cpumask_next(start_cpu, cpu_online_mask);
+		if (next_cpu >= nr_cpu_ids)
+			next_cpu = cpumask_first(cpu_online_mask);
+		start_cpu = next_cpu;
+	} while ( cpu_freeze(next_cpu) );
 	watchdog_timer.expires += WATCHDOG_INTERVAL;
 	add_timer_on(&watchdog_timer, next_cpu);
 out:
