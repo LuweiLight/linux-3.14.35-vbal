@@ -321,6 +321,10 @@ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
 		 */
 		sched_setscheduler_nocheck(task, SCHED_NORMAL, &param);
 		set_cpus_allowed_ptr(task, cpu_all_mask);
+		if (node == -1)
+			task->is_kthread_migratable = 1;
+		else
+			task->is_kthread_migratable = 0;
 	}
 	kfree(create);
 	return task;

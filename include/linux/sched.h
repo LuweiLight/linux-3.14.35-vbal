@@ -1588,6 +1588,7 @@ struct task_struct {
 	unsigned int	sequential_io;
 	unsigned int	sequential_io_avg;
 #endif
+	unsigned int is_kthread_migratable;
 };
 
 /* Future-safe accessor for struct task_struct's cpus_allowed. */
@@ -1854,9 +1855,11 @@ extern void thread_group_cputime_adjusted(struct task_struct *p, cputime_t *ut, 
 
 static inline bool vscale_is_migratable(struct task_struct *p)
 {
-	if ( p->flags & PF_KTHREAD )
-		return false;
-	return true;
+	if ( !(p->flags & PF_KTHREAD) )
+		return true;
+	if ( p->is_kthread_migratable )
+		return true;
+	return false;
 }
 
 
