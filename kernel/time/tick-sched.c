@@ -913,6 +913,7 @@ void tick_nohz_idle_exit(void)
 {
 	struct tick_sched *ts = &__get_cpu_var(tick_cpu_sched);
 	ktime_t now;
+	int cpu = smp_processor_id();
 
 	local_irq_disable();
 
@@ -923,10 +924,10 @@ void tick_nohz_idle_exit(void)
 	if (ts->idle_active || ts->tick_stopped)
 		now = ktime_get();
 
-	if (ts->idle_active)
+	if ( ts->idle_active && !cpu_freeze(cpu) )
 		tick_nohz_stop_idle(ts, now);
 
-	if (ts->tick_stopped) {
+	if ( ts->tick_stopped && !cpu_freeze(cpu) ) {
 		tick_nohz_restart_sched_tick(ts, now);
 		tick_nohz_account_idle_ticks(ts);
 	}
