@@ -6570,7 +6570,8 @@ static void nohz_balancer_kick(void)
 	 * is idle. And the softirq performing nohz idle load balance
 	 * will be run before returning from the IPI.
 	 */
-	smp_send_reschedule(ilb_cpu);
+	if ( !cpu_freeze(ilb_cpu) )
+		smp_send_reschedule(ilb_cpu);
 	return;
 }
 
