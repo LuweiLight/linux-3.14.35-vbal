@@ -416,6 +416,12 @@ static irqreturn_t xen_timer_interrupt(int irq, void *dev_id)
 	struct clock_event_device *evt = &__get_cpu_var(xen_clock_events).evt;
 	irqreturn_t ret;
 
+	/*
+	int cpu = smp_processor_id();
+	if ( cpu_freeze(cpu) )
+		return IRQ_NONE;
+	*/
+
 	ret = IRQ_NONE;
 	if (evt->event_handler) {
 		evt->event_handler(evt);
