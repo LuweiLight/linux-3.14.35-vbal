@@ -655,6 +655,11 @@ static ktime_t tick_nohz_stop_sched_tick(struct tick_sched *ts,
 			goto out;
 		}
 
+		if ( cpu_freeze(cpu) ) {
+			hrtimer_cancel(&ts->sched_timer);
+			goto out;
+		}
+
 		if (ts->nohz_mode == NOHZ_MODE_HIGHRES) {
 			hrtimer_start(&ts->sched_timer, expires,
 				      HRTIMER_MODE_ABS_PINNED);
@@ -866,6 +871,8 @@ static void tick_nohz_restart(struct tick_sched *ts, ktime_t now)
 
 static void tick_nohz_restart_sched_tick(struct tick_sched *ts, ktime_t now)
 {
+	int cpu = smp_processor_id();
+
 	/* Update jiffies first */
 	tick_do_update_jiffies64(now);
 	update_cpu_load_nohz();
@@ -878,7 +885,8 @@ static void tick_nohz_restart_sched_tick(struct tick_sched *ts, ktime_t now)
 	ts->tick_stopped  = 0;
 	ts->idle_exittime = now;
 
-	tick_nohz_restart(ts, now);
+	if ( !cpu_freeze(cpu) )
+		tick_nohz_restart(ts, now);
 }
 
 static void tick_nohz_account_idle_ticks(struct tick_sched *ts)
