@@ -2601,8 +2601,6 @@ pick_next_task(struct rq *rq)
 	BUG(); /* the idle class will always have a runnable task */
 }
 
-static int __migrate_task(struct task_struct *p, int src_cpu, int dest_cpu);
-
 /*
  * __schedule() is the main scheduler function.
  *
