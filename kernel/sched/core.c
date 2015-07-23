@@ -2713,12 +2713,11 @@ need_resched:
 		//dest_cpu = select_fallback_rq(cpu, next);
 		dest_rq = cpu_rq(dest_cpu);
 
-		raw_spin_lock_irq(&dest_rq->lock);
+		raw_spin_lock(&dest_rq->lock);
 		deactivate_task(rq, next, 0);
 		set_task_cpu(next, dest_cpu);
 		activate_task(dest_rq, next, 0);
-		//check_preempt_curr(dest_rq, next, 0);
-		raw_spin_unlock_irq(&dest_rq->lock);
+		raw_spin_unlock(&dest_rq->lock);
 
 		next = pick_next_task(rq);
 	}	
