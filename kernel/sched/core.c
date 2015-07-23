@@ -1332,9 +1332,7 @@ int select_task_rq(struct task_struct *p, int cpu, int sd_flags, int wake_flags)
 	 *   not worry about this generic constraint ]
 	 */
 	if (unlikely(!cpumask_test_cpu(cpu, tsk_cpus_allowed(p)) ||
-		     !cpu_online(cpu)) || 
-		     ( cpu_freeze(cpu) && vscale_is_migratable(p) ) 
-	   )
+		     !cpu_online(cpu)) || cpu_freeze(cpu))
 		cpu = select_fallback_rq(task_cpu(p), p);
 
 	return cpu;
