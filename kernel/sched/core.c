@@ -2718,10 +2718,10 @@ need_resched:
 		raw_spin_unlock(&dest_rq->lock);
 
 		next = pick_next_task(rq);
-	}	
+	}
 	// end = ktime_get();
 	// if (count > 0) {
-	//	printk("[%llu] migrate %d tasks: %lluns\n", 
+	//	printk("[%llu] migrate %d tasks: %lluns\n",
 	//		ktime_to_ns(ktime_get()), count, ktime_to_ns(ktime_sub(end, start)));
 	// }
 
