@@ -4210,10 +4210,9 @@ static int select_idle_sibling(struct task_struct *p, int target)
 				if (i == target || !idle_cpu(i))
 					goto next;
 			}
-			
+
 			target = cpumask_first_and(sched_group_cpus(sg),
 					tsk_cpus_allowed(p));
-
 			goto done;
 next:
 			sg = sg->next;
@@ -4249,7 +4248,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
 	if (sd_flag & SD_BALANCE_WAKE) {
 		if (cpumask_test_cpu(cpu, tsk_cpus_allowed(p)))
 			want_affine = 1;
-		
+
 		if ( !cpu_freeze(prev_cpu) || !vscale_is_migratable(p) )
 			new_cpu = prev_cpu;
 	}
@@ -6009,9 +6008,6 @@ static struct rq *find_busiest_queue(struct lb_env *env,
 	for_each_cpu_and(i, sched_group_cpus(group), env->cpus) {
 		unsigned long power, capacity, wl;
 		enum fbq_type rt;
-
-		if ( cpu_freeze(i) )
-			continue;
 
 		rq = cpu_rq(i);
 		rt = fbq_classify_rq(rq);
