@@ -4843,11 +4843,15 @@ static void migrate_tasks(unsigned int dead_cpu)
 	rq->stop = stop;
 }
 
+raw_spinlock_t cpu_freeze_lock;
+
 SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 {
 	//struct sched_vcpu_freeze freeze_info;
 	//struct sched_vcpu_defreeze defreeze_info;
 	struct sched_domain *sd;
+
+	raw_spin_lock_irq(&cpu_freeze_lock);
 
 	// printk("sys_freezecpu %u\n", cpu);
 
@@ -4874,6 +4878,7 @@ SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 	// Optional
 	smp_send_reschedule(cpu);
 
+	raw_spin_unlock(&cpu_freeze_lock);
 	/*
 	if (freeze) {
 		smp_send_reschedule(cpu);
