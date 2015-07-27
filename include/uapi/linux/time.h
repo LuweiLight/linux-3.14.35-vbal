@@ -19,7 +19,9 @@ struct timeval {
 
 struct get_vscale_info {
 	__u32 consumed_cents;
+	__u32 fair_cents;
 	__u32 max_cents;
+	__u32 sys_idle_cents;
 	__u32 period_ms;
 };
 

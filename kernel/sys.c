@@ -811,6 +811,7 @@ SYSCALL_DEFINE1(getvscaleinfo, struct get_vscale_info __user *, u_info)
 
 	return 0;
 }
+
 SYSCALL_DEFINE1(setvscaleinfo, struct set_vscale_info __user *, u_info)
 {
 	struct sched_set_vscale_info k_info;

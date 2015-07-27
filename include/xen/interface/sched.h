@@ -100,7 +100,9 @@ struct sched_watchdog {
 #define SCHEDOP_get_vscale_info 7
 struct sched_get_vscale_info {
     uint32_t consumed_cents;
+    uint32_t fair_cents;
     uint32_t max_cents;
+    uint32_t sys_idle_cents;
     uint32_t period_ms;
 };
 typedef struct sched_get_vscale_info sched_get_vscale_info_t;
