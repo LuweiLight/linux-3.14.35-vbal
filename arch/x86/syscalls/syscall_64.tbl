@@ -325,6 +325,7 @@
 316     common  getvscaleinfo           sys_getvscaleinfo
 317	common  setvscaleinfo           sys_setvscaleinfo
 318     common  freezecpu               sys_freezecpu
+319	common	getcpustatus		sys_getcpustatus
 
 #
 # x32-specific system call numbers start at 512 to avoid cache impact

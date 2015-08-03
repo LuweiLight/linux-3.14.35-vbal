@@ -4892,6 +4892,13 @@ SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 	return 0;
 }
 
+SYSCALL_DEFINE1(getcpustatus, unsigned int, cpu)
+{
+	if (cpu_freeze(cpu))
+		return 1;
+	return 0;
+}
+
 #endif /* CONFIG_HOTPLUG_CPU */
 
 #if defined(CONFIG_SCHED_DEBUG) && defined(CONFIG_SYSCTL)

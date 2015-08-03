@@ -201,6 +201,7 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 asmlinkage long sys_getvscaleinfo(struct get_vscale_info *u_info);
 asmlinkage long sys_setvscaleinfo(struct set_vscale_info *u_info);
 asmlinkage long sys_freezecpu(unsigned int cpu, bool freeze);
+asmlinkage long sys_getcpustatus(unsigned int cpu);
 asmlinkage long sys_time(time_t __user *tloc);
 asmlinkage long sys_stime(time_t __user *tptr);
 asmlinkage long sys_gettimeofday(struct timeval __user *tv,
