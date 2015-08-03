@@ -83,6 +83,7 @@
 #endif
 
 #include <xen/interface/sched.h>
+#include <xen/interface/vcpu.h>
 #include <asm/xen/hypercall.h>
 
 #include "sched.h"
@@ -4845,29 +4846,14 @@ static void migrate_tasks(unsigned int dead_cpu)
 
 raw_spinlock_t cpu_freeze_lock;
 
-SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
+void vscale_freeze_cpu(unsigned int cpu)
 {
-	//struct sched_vcpu_freeze freeze_info;
-	//struct sched_vcpu_defreeze defreeze_info;
 	struct sched_domain *sd;
+	struct sched_vcpu_freeze freeze_info;
 
 	raw_spin_lock_irq(&cpu_freeze_lock);
 
-	// printk("sys_freezecpu %u\n", cpu);
-
-	set_cpu_freeze(cpu, freeze);
-
-	/*
-	if (freeze) {
-		freeze_info.vcpu_id = cpu;
-		if (HYPERVISOR_sched_op(SCHEDOP_vcpu_freeze, &freeze_info))
-			BUG();
-	} else {
-		defreeze_info.vcpu_id = cpu;
-		if (HYPERVISOR_sched_op(SCHEDOP_vcpu_defreeze, &defreeze_info))
-			BUG();
-	}
-	*/
+	set_cpu_freeze(cpu, 1);
 
 	rcu_read_lock();
 	for_each_domain(cpu, sd) {
@@ -4875,21 +4861,74 @@ SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 	}
 	rcu_read_unlock();
 
-	// Optional
+	freeze_info.vcpu_id = cpu;
+	if (HYPERVISOR_sched_op(SCHEDOP_vcpu_freeze, &freeze_info))
+		BUG();
+
 	smp_send_reschedule(cpu);
 
 	raw_spin_unlock(&cpu_freeze_lock);
-	/*
-	if (freeze) {
-		smp_send_reschedule(cpu);
-	} else {
-		defreeze_info.vcpu_id = cpu;
-		if (HYPERVISOR_sched_op(SCHEDOP_vcpu_defreeze, &defreeze_info))
-			BUG();
-	}
-	*/
+}
 
-	return 0;
+void vscale_defreeze_cpu(unsigned int cpu)
+{
+	struct sched_domain *sd;
+	struct sched_vcpu_defreeze defreeze_info;
+
+	raw_spin_lock_irq(&cpu_freeze_lock);
+
+	set_cpu_freeze(cpu, 0);
+
+	rcu_read_lock();
+	for_each_domain(cpu, sd) {
+		update_group_power(sd, cpu);
+	}
+	rcu_read_unlock();
+
+	smp_send_reschedule(cpu);
+
+	defreeze_info.vcpu_id = cpu;
+	if ( HYPERVISOR_sched_op(SCHEDOP_vcpu_defreeze, &defreeze_info) )
+		BUG();
+
+	raw_spin_unlock(&cpu_freeze_lock);
+}
+
+/*
+ * Return value:
+ * -1: the vCPU has already been in the required state
+ *  1: successfully set;
+ *  others: xxx
+ */
+
+SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
+{
+	struct vcpu_runstate_info runstate;
+
+	if ( freeze )
+	{
+		if ( cpu_freeze(cpu) )
+			return -1;
+
+		if ( HYPERVISOR_vcpu_op(VCPUOP_get_runstate_info, cpu, &runstate) )
+			BUG();
+
+		if ( runstate.state != RUNSTATE_running )
+			return 0;
+
+		vscale_freeze_cpu(cpu);
+
+		return 1;
+	}
+	else
+	{
+		if ( !cpu_freeze(cpu) )
+			return -1;
+
+		vscale_defreeze_cpu(cpu);
+
+		return 1;
+	}
 }
 
 SYSCALL_DEFINE1(getcpustatus, unsigned int, cpu)
