@@ -4846,7 +4846,7 @@ static void migrate_tasks(unsigned int dead_cpu)
 
 raw_spinlock_t cpu_freeze_lock;
 
-void vscale_freeze_cpu(unsigned int cpu)
+void vscale_freeze_cpu(unsigned int cpu, int state)
 {
 	struct sched_domain *sd;
 	struct sched_vcpu_freeze freeze_info;
@@ -4905,6 +4905,8 @@ SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 {
 	struct vcpu_runstate_info runstate;
 
+	if ( cpu == 0 ) return -1;
+
 	if ( freeze )
 	{
 		if ( cpu_freeze(cpu) )
@@ -4913,10 +4915,10 @@ SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 		if ( HYPERVISOR_vcpu_op(VCPUOP_get_runstate_info, cpu, &runstate) )
 			BUG();
 
-		if ( runstate.state != RUNSTATE_running )
+		if ( runstate.state != RUNSTATE_runnable )
 			return 0;
 
-		vscale_freeze_cpu(cpu);
+		vscale_freeze_cpu(cpu, runstate.state);
 
 		return 1;
 	}
