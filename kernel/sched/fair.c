@@ -6901,6 +6901,9 @@ static inline int on_null_domain(struct rq *rq)
  */
 void trigger_load_balance(struct rq *rq)
 {
+	if (cpu_freeze(rq->cpu))
+		return;
+
 	/* Don't need to rebalance while attached to NULL domain */
 	if (unlikely(on_null_domain(rq)))
 		return;
