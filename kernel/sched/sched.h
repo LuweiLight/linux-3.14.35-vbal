@@ -598,6 +598,7 @@ struct rq {
 	int online;
 
 	struct list_head cfs_tasks;
+	struct list_head vscale_tasks;
 
 	u64 rt_avg;
 	u64 age_stamp;
