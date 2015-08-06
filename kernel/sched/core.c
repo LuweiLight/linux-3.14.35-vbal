@@ -4873,7 +4873,7 @@ void vscale_freeze_cpu(unsigned int cpu, int state)
 	raw_spin_unlock(&cpu_freeze_lock);
 }
 
-void vscale_defreeze_cpu(unsigned int cpu)
+void vscale_defreeze_cpu(unsigned int cpu, int state)
 {
 	struct sched_domain *sd;
 	struct sched_vcpu_defreeze defreeze_info;
@@ -4886,12 +4886,14 @@ void vscale_defreeze_cpu(unsigned int cpu)
 	rcu_read_lock();
 	for_each_domain(cpu, sd) {
 		update_group_power(sd, cpu);
+		sd->flags |= (SD_BALANCE_WAKE|SD_BALANCE_NEWIDLE);
 	}
 	rcu_read_unlock();
 
-	raw_spin_lock(&rq->lock);
-	resched_task(rq->curr);
-	raw_spin_unlock(&rq->lock);
+	//raw_spin_lock(&rq->lock);
+	//resched_task(rq->curr);
+	//raw_spin_unlock(&rq->lock);
+	wake_up_idle_cpu(cpu);
 
 	defreeze_info.vcpu_id = cpu;
 	if ( HYPERVISOR_sched_op(SCHEDOP_vcpu_defreeze, &defreeze_info) )
@@ -4913,13 +4915,13 @@ SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 
 	if ( cpu == 0 ) return -1;
 
+	if ( HYPERVISOR_vcpu_op(VCPUOP_get_runstate_info, cpu, &runstate) )
+		BUG();
+
 	if ( freeze )
 	{
 		if ( cpu_freeze(cpu) )
 			return -1;
-
-		if ( HYPERVISOR_vcpu_op(VCPUOP_get_runstate_info, cpu, &runstate) )
-			BUG();
 
 		if ( runstate.state != RUNSTATE_runnable )
 			return 0;
@@ -4933,7 +4935,7 @@ SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 		if ( !cpu_freeze(cpu) )
 			return -1;
 
-		vscale_defreeze_cpu(cpu);
+		vscale_defreeze_cpu(cpu, runstate.state);
 
 		return 1;
 	}
