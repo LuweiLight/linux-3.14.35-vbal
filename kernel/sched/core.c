@@ -4912,6 +4912,7 @@ void vscale_defreeze_cpu(unsigned int cpu, int state)
 SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 {
 	struct vcpu_runstate_info runstate;
+	struct rq *rq = cpu_rq(cpu);
 
 	if ( cpu == 0 ) return -1;
 
@@ -4924,6 +4925,9 @@ SYSCALL_DEFINE2(freezecpu, unsigned int, cpu, bool, freeze)
 			return -1;
 
 		if ( runstate.state != RUNSTATE_runnable )
+			return 0;
+
+		if ( rq->nr_running == 0 )
 			return 0;
 
 		vscale_freeze_cpu(cpu, runstate.state);
