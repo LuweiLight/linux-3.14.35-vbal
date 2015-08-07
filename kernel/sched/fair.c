@@ -6388,6 +6388,9 @@ void idle_balance(int this_cpu, struct rq *this_rq)
 
 	this_rq->idle_stamp = rq_clock(this_rq);
 
+        if (cpu_freeze(this_cpu))
+                return;
+
 	if (this_rq->avg_idle < sysctl_sched_migration_cost)
 		return;
 
@@ -6402,9 +6405,6 @@ void idle_balance(int this_cpu, struct rq *this_rq)
 		unsigned long interval;
 		int continue_balancing = 1;
 		u64 t0, domain_cost;
-
-		if (cpu_freeze(this_cpu))
-			return;
 
 		if (!(sd->flags & SD_LOAD_BALANCE))
 			continue;
