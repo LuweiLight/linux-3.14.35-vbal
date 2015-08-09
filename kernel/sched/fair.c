@@ -5346,7 +5346,7 @@ static void update_cpu_power(struct sched_domain *sd, int cpu)
 	power *= scale_rt_power(cpu);
 	power >>= SCHED_POWER_SHIFT;
 
-	if (!power)
+	if (!power || cpu_freeze(cpu))
 		power = 1;
 
 	cpu_rq(cpu)->cpu_power = power;
