@@ -4889,7 +4889,7 @@ void vscale_defreeze_cpu(unsigned int cpu, int state)
 	rcu_read_lock();
 	for_each_domain(cpu, sd) {
 		update_group_power(sd, cpu);
-		sd->flags |= (SD_BALANCE_WAKE|SD_BALANCE_NEWIDLE);
+		sd->flags |= (SD_LOAD_BALANCE|SD_BALANCE_NEWIDLE);
 	}
 	rcu_read_unlock();
 
