@@ -4851,8 +4851,9 @@ void vscale_freeze_cpu(unsigned int cpu, int state)
 	struct sched_domain *sd;
 	struct sched_vcpu_freeze freeze_info;
 	struct rq *rq = cpu_rq(cpu);
+	unsigned long flags;
 
-	raw_spin_lock_irq(&cpu_freeze_lock);
+	raw_spin_lock_irqsave(&cpu_freeze_lock, flags);
 
 	set_cpu_freeze(cpu, 1);
 
@@ -4870,7 +4871,7 @@ void vscale_freeze_cpu(unsigned int cpu, int state)
 	resched_task(rq->curr);
 	raw_spin_unlock(&rq->lock);
 
-	raw_spin_unlock(&cpu_freeze_lock);
+	raw_spin_unlock_irqrestore(&cpu_freeze_lock, flags);
 }
 
 void vscale_defreeze_cpu(unsigned int cpu, int state)
@@ -4878,8 +4879,9 @@ void vscale_defreeze_cpu(unsigned int cpu, int state)
 	struct sched_domain *sd;
 	struct sched_vcpu_defreeze defreeze_info;
 	struct rq *rq = cpu_rq(cpu);
+	unsigned long flags;
 
-	raw_spin_lock_irq(&cpu_freeze_lock);
+	raw_spin_lock_irqsave(&cpu_freeze_lock, flags);
 
 	set_cpu_freeze(cpu, 0);
 
@@ -4899,7 +4901,7 @@ void vscale_defreeze_cpu(unsigned int cpu, int state)
 	if ( HYPERVISOR_sched_op(SCHEDOP_vcpu_defreeze, &defreeze_info) )
 		BUG();
 
-	raw_spin_unlock(&cpu_freeze_lock);
+	raw_spin_unlock_irqrestore(&cpu_freeze_lock, flags);
 }
 
 /*
