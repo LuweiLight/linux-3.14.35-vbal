@@ -2738,6 +2738,7 @@ need_resched:
 		deactivate_task(rq, next, 0);
 		set_task_cpu(next, dest_cpu);
 		activate_task(dest_rq, next, 0);
+		check_preempt_curr(dest_rq, next, 0);
 		raw_spin_unlock(&dest_rq->lock);
 
 		next = pick_next_task(rq);
